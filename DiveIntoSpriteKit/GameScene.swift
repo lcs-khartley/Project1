@@ -9,13 +9,19 @@
 import SpriteKit
 
 @objcMembers
-class GameScene: SKScene {
+class GameScene: SKScene, SKPhysicsContactDelegate {
     
     
     let player = SKSpriteNode(imageNamed: "player-ufo.png")
     var touchingPlayer = false
     var gameTimer: Timer?
-
+    let scoreLabel = SKLabelNode(fontNamed: "AvenirNextCondensed-Bold")
+    var score = 0 {
+        didSet {
+            scoreLabel.text = "SCORE: \(score)"
+        }
+    }
+    
     override func didMove(to view: SKView) {
         // this method is called when your game scene is ready to run
         
@@ -38,6 +44,15 @@ class GameScene: SKScene {
         player.position.x = -400
         player.zPosition = 1
         addChild(player)
+        player.physicsBody = SKPhysicsBody(texture: player.texture!, size: player.size)
+        player.physicsBody?.categoryBitMask = 1
+        // reports all contacts with player
+        physicsWorld.contactDelegate = self
+        
+        // Makes the score label
+        scoreLabel.zPosition = 2
+        scoreLabel.position.y = 300
+        addChild(scoreLabel)
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -64,7 +79,7 @@ class GameScene: SKScene {
         
         let location = touch.location(in: self)
         player.position = location
-
+        
     }
     
     
@@ -88,8 +103,26 @@ class GameScene: SKScene {
         sprite.physicsBody = SKPhysicsBody(texture: sprite.texture!, size: sprite.size)
         sprite.physicsBody?.velocity = CGVector(dx: -500, dy: 0)
         sprite.physicsBody?.linearDamping = 0
-        
+        // allow collisions with player only
+        sprite.physicsBody?.contactTestBitMask = 1
+        sprite.physicsBody?.categoryBitMask = 0
     }
+    
+    func didBegin(_ contact: SKPhysicsContact) {
+        guard let nodeA = contact.bodyA.node else { return }
+        guard let nodeB = contact.bodyB.node else { return }
+        
+        if nodeA == player {
+            playerHit(nodeB)
+        } else {
+            playerHit(nodeA)
+        }
+    }
+    
+    func playerHit(_ node: SKNode) {
+        player.removeFromParent()
+    }
+
     
 }
 
